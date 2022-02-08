@@ -1,8 +1,8 @@
 package main
 
 import (
-	"./seamdap_client"
 	"fmt"
+	"github.com/gPenzotti/SEAMDAP/seamdap_client"
 	"github.com/google/uuid"
 	"sync"
 	"time"
@@ -24,9 +24,9 @@ func main(){
 	id, err := uuid.NewUUID()
 	fmt.Println(id, err, clientMaxLifeTime)
 
-	for i :=0; i < 10; i ++{
+	for i := 0; i < 10; i ++{
 		wg.Add(1)
-		go seamdap_client.NewClient(uuid.New(), &wg, clientMaxLifeTime, startTime)
+		go seamdap_client.NewClient(uuid.New(), i, &wg, clientMaxLifeTime, startTime)
 	}
 	wg.Wait()
 	return

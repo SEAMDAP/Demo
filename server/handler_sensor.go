@@ -3,15 +3,18 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/paulmach/orb"
 	"io/ioutil"
-	"time"
 	"net/http"
+	"time"
 
-	"../utils"
+	"github.com/go-redis/redis"
+
+	"github.com/gPenzotti/SEAMDAP/utils"
 
 	geojson "github.com/paulmach/orb/geojson"
-
 )
 
 
@@ -24,12 +27,12 @@ type DataSave struct {
 /*
 Response for NewSensor()
 */
-type NewSensorRes struct {
-	UID           utils.RandomId
-	Name          string
-	Owner         string
-	Creation_time time.Time
-}
+//type NewSensorRes struct {
+//	TDID           utils.RandomId
+//	Name          string
+//	Owner         string
+//	Creation_time time.Time
+//}
 
 /*
 Request for AddSensor()
@@ -60,7 +63,7 @@ type RetSensorInfo struct {
 	Note          string
 }
 
-func newSensorInterface() func(w http.ResponseWriter, r *http.Request) {
+func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		//Read body
@@ -74,13 +77,24 @@ func newSensorInterface() func(w http.ResponseWriter, r *http.Request) {
 
 		// Checks
 		// if TD title not set, raise request error
-		if td.Title == nil {
+		if td.Title == "" {
 			fmt.Println("Failed parsing Thing Description")
 			return
 		}
 
+		id, err := uuid.NewUUID()
+		if err !=nil{
+			fmt.Println("Error in generating UUID: ", err)
+		}
+		res := utils.NewSensorRes{
+			UID:          id, // Andrebbe creato random qui e restituito al client
+			Name:         td.Model,
+			Owner:        td.Manufacturer,
+			CreationTime: time.Now(),
+		}
+		err = client_redis.Set(res.UID.String(), res, 0).Err()
 
-		res := NewSensorRes{UID: s.SensorUID, Name: s.ProductName, Owner: s.Owner, Creation_time: s.Creation_time}
+
 		w.WriteHeader(http.StatusOK)
 		rs, _ := json.Marshal(res)
 		w.Write(rs)
@@ -89,45 +103,84 @@ func newSensorInterface() func(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
-func newSensorInstance() func(w http.ResponseWriter, r *http.Request) {
+
+func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		//Token to check if request is authorized
-		//tokenIF := r.Header.Get("Authorization")
-
 		//Read body
+		inst_ := utils.InstanceRegistrationRequest{}
 		body, _ := ioutil.ReadAll(r.Body)
-		sen := utils.Custom{}
-		err := json.Unmarshal([]byte(body), &sen)
+		err := json.Unmarshal(body, &inst_)
 		if err != nil {
-			fmt.Println("Failed parsing InsertSensorData: ", err.Error())
+			fmt.Println("Failed parsing InstanceRegistrationRequest: ", err.Error())
 			return
 		}
 
+		// CHECK TD EXISTANCE
+		val, err := client_redis.Get(inst_.TDID.String()).Result()
+		if err != nil {
+			fmt.Println("ERRORE, NESSUN TD TROVATO: ",err)
+		}
+		fmt.Println(val)
 
-		fmt.Printf(" Added %d data in %s.\n")
+
+		response := utils.InstanceRegistrationResponse{
+			InstanceID:    uuid.New(),
+			Endpoint:     "BLBLBL",
+			CreationTime: time.Time{},
+			BoardName:    "BLBLBL",
+			Manufacturer: "BLBLBL",
+		}
+
+		instance := utils.SensorInstance{
+			UID:          response.InstanceID,
+			TD_ID:        inst_.TDID,
+			CreationTime: response.CreationTime,
+			OwnerID:      inst_.UserID,
+		}
+		err = client_redis.Set(response.InstanceID.String(), instance, 0).Err()
+		if err != nil {
+			fmt.Println("ERRORE, Scrittura non riuscita: ",err)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		rs, _ := json.Marshal(response)
+		w.Write(rs)
 
 		return
 	}
 }
 
-func newSensorSampling() func(w http.ResponseWriter, r *http.Request) {
+func newSensorSampling(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		//Token to check if request is authorized
-		//tokenIF := r.Header.Get("Authorization")
+		string_instance_ID := mux.Vars(r)["instance_id"]
+		fmt.Println(string_instance_ID)
 
 		//Read body
+		samp_ := utils.Custom{}
 		body, _ := ioutil.ReadAll(r.Body)
-		sen := utils.Custom{}
-		err := json.Unmarshal([]byte(body), &sen)
+		err := json.Unmarshal(body, &inst_)
 		if err != nil {
-			fmt.Println("Failed parsing InsertSensorData: ", err.Error())
+			fmt.Println("Failed parsing InstanceRegistrationRequest: ", err.Error())
 			return
 		}
 
+		// CHECK TD EXISTANCE
+		for _,v := range samp_.Record{
+			val, err := client_redis.Get(v.Name).Result()
+			if err != nil {
+				fmt.Println("ERRORE, NESSUN TD TROVATO: ",err)
+			}
+			fmt.Println(v)
+			fmt.Println(val)
+		}
 
-		fmt.Printf(" Added %d data in %s.\n")
+		response := utils.SamplingResponse{Status: string_instance_ID}
+
+		w.WriteHeader(http.StatusOK)
+		rs, _ := json.Marshal(response)
+		w.Write(rs)
 
 		return
 	}

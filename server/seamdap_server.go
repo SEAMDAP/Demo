@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"net"
 	"net/http"
@@ -81,6 +82,28 @@ func main() {
 	}
 }
 
+
+
+func runServer() {
+	fmt.Println("Starting Server...")
+
+	if Port == "" {
+		fmt.Println("ERROR: missing port")
+	}
+
+	client_redis := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+		Password: "",
+		DB: 0,
+	})
+	HTTPServer := Routing(client_redis)
+	server =&Server{ HttpServer: HTTPServer}
+	server.ListenAndServe()
+
+	initServer <- true
+	<-done
+}
+
 func runCommand(input string, done chan bool) error {
 	input = strings.TrimSuffix(input, "\n")
 	arrCommandStr := strings.Fields(input)
@@ -112,20 +135,6 @@ var admin_cmd = map[string]func(arrCommandString []string){
 	"status":statusServer,
 }
 
-func runServer() {
-	fmt.Println("Starting Server...")
-
-	if Port == "" {
-		fmt.Println("ERROR: missing port")
-	}
-	HTTPServer := Routing()
-	server =&Server{ HttpServer: HTTPServer}
-	server.ListenAndServe()
-
-	initServer <- true
-	<-done
-}
-
 func startServer(arrCommandStr []string) {
 	if server_flag == true {
 		fmt.Println("Server already running")
@@ -136,7 +145,6 @@ func startServer(arrCommandStr []string) {
 	}
 }
 
-
 func stopServer(arrCommandStr []string) {
 	if server_flag == true {
 		done <- true
@@ -146,6 +154,7 @@ func stopServer(arrCommandStr []string) {
 		fmt.Println("Server is not running. Use 'start' to run the server.")
 	}
 }
+
 func statusServer(arrCommandStr []string) {
 	if server_flag == true {
 		fmt.Println("\nON - Server Status")
@@ -154,6 +163,7 @@ func statusServer(arrCommandStr []string) {
 	}
 
 }
+
 func help(arrCommandStr []string) {
 	fmt.Println("Command List:")
 	fmt.Println("'start': turns the server on")
@@ -173,14 +183,15 @@ func exit(arrCommandStr []string) {
 //////////////////////////ROUTING
 //////////////////////////ROUTING
 
-func Routing() *http.Server {
+func Routing(client_redis *redis.Client) *http.Server {
 
 	router := mux.NewRouter()
 	subRouterApi := router.PathPrefix("/api").Subrouter()
 	subRouterApiSensor := subRouterApi.PathPrefix("/sensor").Subrouter()
-	subRouterApiSensor.HandleFunc("/interface", newSensorInterface()).Methods("POST").Schemes("http")
-	subRouterApiSensor.HandleFunc("/instance", newSensorInstance()).Methods("POST").Schemes("http")
-	subRouterApiSensor.HandleFunc("/data", newSensorSampling()).Methods("POST").Schemes("http")
+	subRouterApiSensor.HandleFunc("/interface", newSensorInterface(client_redis)).Methods("POST").Schemes("http")
+	subRouterApiSensor.HandleFunc("/instance", newSensorInstance(client_redis)).Methods("POST").Schemes("http")
+	subRouterApiSensor.HandleFunc("/data", newSensorSampling(client_redis)).Methods("POST").Schemes("http")
+	subRouterApiSensor.HandleFunc("/data/{instance_id}", newSensorSampling(client_redis)).Methods("POST").Schemes("http")
 
 	HTTPServer := &http.Server{Addr: ":" + Port, Handler: router}
 

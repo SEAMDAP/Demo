@@ -16,7 +16,7 @@ type ThingDescription struct {
 	//ProductName string  `json:"prodname"`
 	//Owner       string  `json:"owner"`
 	ID           string  `json:"id"`
-	Title        *string `json:"title"`
+	Title        string `json:"title"`
 	Model        string  `json:"model"`
 	//Titles      *map[string]string `json:"titles"`
 	Description string `json:"description"`
@@ -29,8 +29,8 @@ type ThingDescription struct {
 type DataSchema struct {
 	Type        string            `json:"type"`
 	Description map[string]string `json:"description"`
-	MinVal      *float64          `json:"minimum"`
-	MaxVal      *float64          `json:"maximum"`
+	MinVal      float64          `json:"minimum"`
+	MaxVal      float64          `json:"maximum"`
 }
 
 type InteractionAffordance struct {
@@ -69,8 +69,8 @@ Check if given Thing Description descibe initialized sensor
 func (td *ThingDescription) Equals(o ThingDescription) (bool, error) {
 	eqProp := true
 
-	if (o.Model == "") || (td.Model == "") || (*(o.Title) == "") ||
-		(*td.Title == "") || (o.Manufacturer == "") || (td.Manufacturer == "") || (o.Title == nil) || (td.Title == nil) {
+	if (o.Model == "") || (td.Model == "") || ((o.Title) == "") ||
+		(td.Title == "") || (o.Manufacturer == "") || (td.Manufacturer == "") || (o.Title == "") || (td.Title == "") {
 		return false, errors.New("Check Thing Descrtiption format. Some values must not be empty.")
 	}
 
@@ -88,5 +88,5 @@ func (td *ThingDescription) Equals(o ThingDescription) (bool, error) {
 		eqProp = eqProp && (count == len(td.Properties))
 	}
 
-	return eqProp && (o.Model == td.Model) && (*o.Title == *td.Title) && (o.Manufacturer == td.Manufacturer), nil
+	return eqProp && (o.Model == td.Model) && (o.Title == td.Title) && (o.Manufacturer == td.Manufacturer), nil
 }
