@@ -66,6 +66,7 @@ type RetSensorInfo struct {
 func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		fmt.Println("Received request for newSensorInterface")
 		//Read body
 		td := utils.ThingDescription{}
 		body, _ := ioutil.ReadAll(r.Body)
@@ -82,23 +83,29 @@ func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, 
 			return
 		}
 
+
 		id, err := uuid.NewUUID()
 		if err !=nil{
 			fmt.Println("Error in generating UUID: ", err)
 		}
 		res := utils.NewSensorRes{
-			UID:          id, // Andrebbe creato random qui e restituito al client
+			UID:          id,
 			Name:         td.Model,
 			Owner:        td.Manufacturer,
 			CreationTime: time.Now(),
 		}
-		err = client_redis.Set(res.UID.String(), res, 0).Err()
-
+		resByte, err := json.Marshal(res)
+		if err !=nil{
+			fmt.Println("Error during NewSensorRes marshalling: ", err)
+		}
+		err = client_redis.Set(res.UID.String(), resByte, 0).Err()
+		if err !=nil{
+			fmt.Println("ERRORE, Scrittura TD non riuscita: ", err)
+		}
 
 		w.WriteHeader(http.StatusOK)
 		rs, _ := json.Marshal(res)
 		w.Write(rs)
-
 		return
 
 	}
@@ -106,6 +113,8 @@ func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, 
 
 func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fmt.Println("Received request for newSensorInstance")
 
 		//Read body
 		inst_ := utils.InstanceRegistrationRequest{}
@@ -117,28 +126,43 @@ func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r
 		}
 
 		// CHECK TD EXISTANCE
-		val, err := client_redis.Get(inst_.TDID.String()).Result()
+		valString, err := client_redis.Get(inst_.TDID.String()).Result()
 		if err != nil {
 			fmt.Println("ERRORE, NESSUN TD TROVATO: ",err)
 		}
-		fmt.Println(val)
 
+		val := utils.NewSensorRes{}
+		err = json.Unmarshal([]byte(valString), &val)
+		if err != nil {
+			fmt.Println("Error in unmarshalling data from redis.")
+		}
+
+
+		id, err := uuid.NewUUID()
+		if err !=nil{
+			fmt.Println("Error in generating UUID: ", err)
+		}
 
 		response := utils.InstanceRegistrationResponse{
-			InstanceID:    uuid.New(),
-			Endpoint:     "BLBLBL",
-			CreationTime: time.Time{},
-			BoardName:    "BLBLBL",
-			Manufacturer: "BLBLBL",
+			InstanceID:   id,
+			Endpoint:     "",
+			CreationTime: time.Now(),
+			BoardName:    val.Name,
+			Manufacturer: val.Owner,
 		}
 
 		instance := utils.SensorInstance{
-			UID:          response.InstanceID,
+			UID:          id,
 			TD_ID:        inst_.TDID,
 			CreationTime: response.CreationTime,
 			OwnerID:      inst_.UserID,
 		}
-		err = client_redis.Set(response.InstanceID.String(), instance, 0).Err()
+
+		instanceByte, err := json.Marshal(instance)
+		if err !=nil{
+			fmt.Println("Error during NewSensorRes marshalling: ", err)
+		}
+		err = client_redis.Set(response.InstanceID.String(), instanceByte, 0).Err()
 		if err != nil {
 			fmt.Println("ERRORE, Scrittura non riuscita: ",err)
 		}
@@ -154,13 +178,16 @@ func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r
 func newSensorSampling(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+
 		string_instance_ID := mux.Vars(r)["instance_id"]
 		fmt.Println(string_instance_ID)
+		fmt.Println("Received request for newSensorSampling on ", string_instance_ID)
+
 
 		//Read body
 		samp_ := utils.Custom{}
 		body, _ := ioutil.ReadAll(r.Body)
-		err := json.Unmarshal(body, &inst_)
+		err := json.Unmarshal(body, &samp_)
 		if err != nil {
 			fmt.Println("Failed parsing InstanceRegistrationRequest: ", err.Error())
 			return
@@ -168,12 +195,10 @@ func newSensorSampling(client_redis *redis.Client) func(w http.ResponseWriter, r
 
 		// CHECK TD EXISTANCE
 		for _,v := range samp_.Record{
-			val, err := client_redis.Get(v.Name).Result()
+			_, err := client_redis.Get(v.Name).Result()
 			if err != nil {
 				fmt.Println("ERRORE, NESSUN TD TROVATO: ",err)
 			}
-			fmt.Println(v)
-			fmt.Println(val)
 		}
 
 		response := utils.SamplingResponse{Status: string_instance_ID}

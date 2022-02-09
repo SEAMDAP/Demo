@@ -3,6 +3,7 @@ package seamdap_client
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gPenzotti/SEAMDAP/test"
 	"github.com/gPenzotti/SEAMDAP/utils"
 	"github.com/google/uuid"
 	"io/ioutil"
@@ -20,26 +21,32 @@ type SEAMDAPClient struct{
 	ID int
 	Index int
 	TDId uuid.UUID
+	UserAgent string
+	MSG_index int
 }
 
 func NewClient(id uuid.UUID, index int,  wg *sync.WaitGroup, maxTime int, startTime time.Time){
 	defer wg.Done()
 	rand.Seed(time.Now().UnixNano() + int64(index))
 
+	clientID:=rand.Intn(100000)
 	MyClient := SEAMDAPClient{
-		ID:    rand.Intn(100000),
-		Index: 0,
+		ID:    clientID,
+		Index: index,
 		TDId:  uuid.UUID{},
+		UserAgent: "CLIENT_N"+strconv.Itoa(index)+"_ID"+strconv.Itoa(clientID),
+		MSG_index: rand.Intn(5),
 	}
 
 	timetoWake := rand.Intn(maxTime /3)
-	time.Sleep(time.Duration(timetoWake)*time.Second)
+	//time.Sleep(time.Duration(timetoWake)*time.Second)//TODO: SLEEP
 
 	timetoTD := rand.Intn((maxTime/2) - timetoWake)
-	time.Sleep(time.Duration(timetoTD)*time.Second)
+	//time.Sleep(time.Duration(timetoTD)*time.Second) //TODO: SLEEP
 
 	//TODO: interfaceRegistration() --> return TD_id
 	TD_id,err := TD_CreateAndRegister(&MyClient)
+	fmt.Println(TD_id)
 	if err != nil {
 		fmt.Println("ERRORE: ", err)
 		return
@@ -52,7 +59,7 @@ func NewClient(id uuid.UUID, index int,  wg *sync.WaitGroup, maxTime int, startT
 	for s := 0; s < sensorsInstancesNumber; s++ {
 		timeToInstance := rand.Intn((maxTime- (timetoWake+timetoTD)) / (sensorsInstancesNumber *2))
 		sub_wg.Add(1)
-		sensorInstanceSubRoutine(&sub_wg, MyClient, timeToInstance, maxTime, startTime) //TODO: use TD_id
+		sensorInstanceSubRoutine(&sub_wg, MyClient, timeToInstance, maxTime, startTime)
 	}
 	wg.Wait()
 
@@ -61,7 +68,7 @@ func NewClient(id uuid.UUID, index int,  wg *sync.WaitGroup, maxTime int, startT
 
 func sensorInstanceSubRoutine( wg *sync.WaitGroup,client SEAMDAPClient, sleepTime int, maxTime int, startTime time.Time ){
 	defer wg.Done()
-	time.Sleep(time.Duration(sleepTime)*time.Second)
+	//time.Sleep(time.Duration(sleepTime)*time.Second) //TODO: SLEEP
 
 	// TODO: instanceRegistration --> IN_id ?
 	instID, err := INSTANCE_CreateAndRegister(&client)
@@ -70,9 +77,10 @@ func sensorInstanceSubRoutine( wg *sync.WaitGroup,client SEAMDAPClient, sleepTim
 	}
 	// Samples Communication period time
 	commPeriod := rand.Intn(20*60) + 10*60 // from 10 up to 30 minutes
-	time.Sleep(time.Duration(commPeriod)*time.Second)
+	//time.Sleep(time.Duration(commPeriod)*time.Second) //TODO: SLEEP
 
 	for{
+
 		remainingSeconds := startTime.Add(time.Duration(maxTime)*time.Second).Sub(time.Now()).Seconds()
 		if remainingSeconds < float64((2*commPeriod)){
 			break
@@ -84,36 +92,17 @@ func sensorInstanceSubRoutine( wg *sync.WaitGroup,client SEAMDAPClient, sleepTim
 			fmt.Println(err)
 		}
 		fmt.Println("UPLOAD COMPLETE: ",stat)
-		time.Sleep(time.Duration(commPeriod)*time.Second)
+		//time.Sleep(time.Duration(commPeriod)*time.Second)
+		time.Sleep(time.Duration(10)*time.Second)
 	}
 
 
 }
 
 func TD_CreateAndRegister(client *SEAMDAPClient) (uuid.UUID,error){
+	fmt.Println("Registering TD...")
 
-	TD := utils.ThingDescription{
-		ID:           client.TDId.String(), //MA CHI LO PASSA A CHI??
-		Title:        "TD_TITLE_EXAMPLE_" + strconv.Itoa(client.Index),
-		Model:        "TD_MODEL_EXAMPLE_" + strconv.Itoa(client.Index),
-		Description:  "TD_DESC_EXAMPLE_" + strconv.Itoa(client.Index),
-		Manufacturer: "UNIPR",
-		Properties:   map[string]utils.DataSchema{
-			"temperature" : utils.DataSchema{
-				Type:        "number",
-				Description: map[string]string{"name":"tem"},
-				MinVal:      -20.0,
-				MaxVal:      +60.0,
-			},
-			"humidity" : utils.DataSchema{
-				Type:        "number",
-				Description: map[string]string{"name":"hum"},
-				MinVal:      0.0,
-				MaxVal:      +100.0,
-			},
-		},
-		Events:       nil,
-	}
+	TD := test.TestMessagesTD[client.MSG_index]
 
 	resp,err := InterfaceRegistration(TD, 0, time.Now())
 	if err != nil{
@@ -132,10 +121,13 @@ func TD_CreateAndRegister(client *SEAMDAPClient) (uuid.UUID,error){
 		fmt.Println("Failed parsing NewSensorRes: ", err.Error())
 		return uuid.New(), err
 	}
+
+	fmt.Println("Received response: ", ns)
 	return ns.UID, nil
 }
 
 func INSTANCE_CreateAndRegister(client *SEAMDAPClient) (uuid.UUID,error){
+	fmt.Println("Registering Instance...")
 
 	// Creazione del messaggio di istanza
 	instance_request := utils.InstanceRegistrationRequest{
@@ -165,25 +157,24 @@ func INSTANCE_CreateAndRegister(client *SEAMDAPClient) (uuid.UUID,error){
 		fmt.Println("Failed parsing InstanceRegistrationResponse: ", err.Error())
 		return uuid.New(), err
 	}
+	fmt.Println("Received response: ", ns)
 	return ns.InstanceID, nil
 }
 
 func SAMPLE_CreateAndUpload(client *SEAMDAPClient, instanceID uuid.UUID) (string,error){
 
+	fmt.Println("Uploading sample...")
+
 	// Creazione del messaggio di sampling
 
-	values := map[string]interface{}{
-		"hum" : float64(rand.Intn(100)),
-		"tem": float64(rand.Intn(80) - 20),
+	rec,err := test.GetSENML(client.MSG_index)
+	if err != nil {
+		fmt.Println("Error in generating Senml: ", err)
 	}
+	rec.TimeRecord = time.Now().Format("2006.01.02T15:04:05")
+	rec.Name = instanceID.String()
 
-	rec := utils.SenMLPos{
-		TimeRecord: time.Now().Format("2006.01.02T15:04:05"),
-		Name:       instanceID.String(),
-		Data:       values,
-	}
-
-	msg := utils.Custom{
+		msg := utils.Custom{
 		Record: []utils.SenMLPos{rec},
 	}
 
@@ -209,5 +200,6 @@ func SAMPLE_CreateAndUpload(client *SEAMDAPClient, instanceID uuid.UUID) (string
 		return "", err
 	}
 
+	fmt.Println("Received response: ", ns)
 	return ns.Status, nil
 }

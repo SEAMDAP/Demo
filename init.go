@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/gPenzotti/SEAMDAP/seamdap_client"
+	"github.com/gPenzotti/SEAMDAP/server"
 	"github.com/google/uuid"
+	"os"
 	"sync"
 	"time"
 )
@@ -16,19 +18,46 @@ import (
 */
 func main(){
 
-	clientMaxLifeTime := 24*3600 //seconds
-	startTime := time.Now()
-	// Attivare tutti i seamdap_client: per ogni seamdap_client generare un UUID univoco
-	var wg sync.WaitGroup
-
-	id, err := uuid.NewUUID()
-	fmt.Println(id, err, clientMaxLifeTime)
-
-	for i := 0; i < 10; i ++{
-		wg.Add(1)
-		go seamdap_client.NewClient(uuid.New(), i, &wg, clientMaxLifeTime, startTime)
+	if len(os.Args) < 2 {
+		fmt.Printf(" Error: missing argument. \nUsage:\t\t %s <modality>\n <modality> must be in ['server','client'] \n", os.Args[0])
+		return
 	}
-	wg.Wait()
+
+	serv := func() {
+		server.StartAll()
+	}
+	client := func() {
+
+		clientMaxLifeTime := 24*3600 //seconds
+		numberOfClient := 2
+		startTime := time.Now()
+
+		// Attivare tutti i seamdap_client: per ogni seamdap_client genera un UUID univoco
+		var wg sync.WaitGroup
+
+		for i := 0; i < numberOfClient; i ++{
+			wg.Add(1)
+			go seamdap_client.NewClient(uuid.New(), i, &wg, clientMaxLifeTime, startTime)
+		}
+		wg.Wait()
+	}
+
+	arg := os.Args[1]
+	switch arg {
+	case "server":
+		fmt.Println("Only Server")
+		serv()
+
+	case "client":
+		fmt.Println("Only Client")
+		client()
+
+	}
+
+
+
+
+
 	return
 }
 

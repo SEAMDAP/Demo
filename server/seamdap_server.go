@@ -66,11 +66,11 @@ func (s *Server) Shutdown() error {
 //////////////////////////MAIN
 
 
-func main() {
+func StartAll() { //MAIN
 	done = make(chan bool, 1)
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("$ POSITIVE $ ")
+		fmt.Println("$ SEAMDAP Server ready ")
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)

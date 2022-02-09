@@ -14,8 +14,9 @@ import (
 func  InterfaceRegistration(TD utils.ThingDescription, IdPlot int32, date time.Time) (*http.Response, error) {
 	msg := TD
 	//url := "http://brie.ce.unipr.it/api/sensor/" + strconv.Itoa(int(IdPlot))
-	url := "http://127.0.0.1/api/sensor/interface"
+	url := "http://127.0.0.1:8000/api/sensor/interface"
 	method := "POST"
+
 
 	jsonRequest, err := json.Marshal(msg)
 	if err != nil {
@@ -51,7 +52,7 @@ func  InterfaceRegistration(TD utils.ThingDescription, IdPlot int32, date time.T
 func InstanceRegistration(ins_ utils.InstanceRegistrationRequest) (*http.Response, error) {
 	msg := ins_
 	//url := "http://brie.ce.unipr.it/api/sensor/" + strconv.Itoa(int(IdPlot))
-	url := "http://127.0.0.1/api/sensor/instance"
+	url := "http://127.0.0.1:8000/api/sensor/instance"
 	method := "POST"
 
 	jsonRequest, err := json.Marshal(msg)
@@ -88,7 +89,7 @@ func InstanceRegistration(ins_ utils.InstanceRegistrationRequest) (*http.Respons
 func UploadSampling(samp_ utils.Custom, instance_ID uuid.UUID) (*http.Response, error) {
 	msg := samp_
 	//url := "http://brie.ce.unipr.it/api/sensor/" + strconv.Itoa(int(IdPlot))
-	url := "http://brie.ce.unipr.it/api/sensor/data/" + instance_ID.String() // DEVO METTERE QUI L'ID SENNO DOVE?
+	url := "http://127.0.0.1:8000/api/sensor/data/" + instance_ID.String() // DEVO METTERE QUI L'ID SENNO DOVE?
 	method := "POST"
 
 	jsonRequest, err := json.Marshal(msg)
