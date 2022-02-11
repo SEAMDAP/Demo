@@ -7,7 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/paulmach/orb"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -67,9 +69,11 @@ func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, 
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Received request for newSensorInterface")
+
 		//Read body
 		td := utils.ThingDescription{}
 		body, _ := ioutil.ReadAll(r.Body)
+		fmt.Println(string(body))
 		err := json.Unmarshal(body, &td)
 		if err != nil {
 			fmt.Println("Failed parsing Thing Description: ", err.Error())
@@ -138,10 +142,11 @@ func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r
 		}
 
 
-		id, err := uuid.NewUUID()
-		if err !=nil{
-			fmt.Println("Error in generating UUID: ", err)
-		}
+		// We can use short UID beacuse those ID are related to the subset of the related TD
+		id := rand.Intn( 10^9)
+		//if err !=nil{
+		//	fmt.Println("Error in generating short UID: ", err)
+		//}
 
 		response := utils.InstanceRegistrationResponse{
 			InstanceID:   id,
@@ -162,7 +167,7 @@ func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r
 		if err !=nil{
 			fmt.Println("Error during NewSensorRes marshalling: ", err)
 		}
-		err = client_redis.Set(response.InstanceID.String(), instanceByte, 0).Err()
+		err = client_redis.Set(strconv.Itoa(response.InstanceID), instanceByte, 0).Err()
 		if err != nil {
 			fmt.Println("ERRORE, Scrittura non riuscita: ",err)
 		}
@@ -179,9 +184,9 @@ func newSensorSampling(client_redis *redis.Client) func(w http.ResponseWriter, r
 	return func(w http.ResponseWriter, r *http.Request) {
 
 
-		string_instance_ID := mux.Vars(r)["instance_id"]
-		fmt.Println(string_instance_ID)
-		fmt.Println("Received request for newSensorSampling on ", string_instance_ID)
+		string_TD_ID := mux.Vars(r)["TD_id"]
+		fmt.Println(string_TD_ID)
+		fmt.Println("Received request for newSensorSampling on ", string_TD_ID)
 
 
 		//Read body
@@ -201,7 +206,7 @@ func newSensorSampling(client_redis *redis.Client) func(w http.ResponseWriter, r
 			}
 		}
 
-		response := utils.SamplingResponse{Status: string_instance_ID}
+		response := utils.SamplingResponse{Status: fmt.Sprintf("Msg %s:%s of size %d B received", string_TD_ID, samp_.Record[0].Name, len(body))}
 
 		w.WriteHeader(http.StatusOK)
 		rs, _ := json.Marshal(response)

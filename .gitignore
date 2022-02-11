@@ -1,3 +1,5 @@
-test
 .idea
-
+test
+dump.rdb
+logfiles
+application.log

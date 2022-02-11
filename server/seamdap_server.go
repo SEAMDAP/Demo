@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"github.com/gPenzotti/SEAMDAP/configs"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"net"
@@ -21,7 +22,7 @@ type Server struct {
 	HttpServer *http.Server
 	Listener   net.Listener
 }
-var Port string = "8000"
+var Port = configs.Server_port
 var done = make(chan bool, 1)
 var initServer = make(chan bool, 1)
 var server_flag = false
@@ -92,8 +93,8 @@ func runServer() {
 	}
 
 	client_redis := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		Password: "",
+		Addr: configs.Server_REDIS_fullAddress,
+		Password: configs.Server_REDIS_pass,
 		DB: 0,
 	})
 	HTTPServer := Routing(client_redis)
@@ -186,13 +187,24 @@ func exit(arrCommandStr []string) {
 func Routing(client_redis *redis.Client) *http.Server {
 
 	router := mux.NewRouter()
-	subRouterApi := router.PathPrefix("/api").Subrouter()
-	subRouterApiSensor := subRouterApi.PathPrefix("/sensor").Subrouter()
-	subRouterApiSensor.HandleFunc("/interface", newSensorInterface(client_redis)).Methods("POST").Schemes("http")
-	subRouterApiSensor.HandleFunc("/instance", newSensorInstance(client_redis)).Methods("POST").Schemes("http")
-	subRouterApiSensor.HandleFunc("/data", newSensorSampling(client_redis)).Methods("POST").Schemes("http")
-	subRouterApiSensor.HandleFunc("/data/{instance_id}", newSensorSampling(client_redis)).Methods("POST").Schemes("http")
+	//subRouterApi := router.PathPrefix("/api").Subrouter()
+	//subRouterApiSensor := subRouterApi.PathPrefix("/sensor").Subrouter()
+	//subRouterApiSensor.HandleFunc("/interface", newSensorInterface(client_redis)).Methods("POST").Schemes("http")
+	//subRouterApiSensor.HandleFunc("/instance", newSensorInstance(client_redis)).Methods("POST").Schemes("http")
+	//subRouterApiSensor.HandleFunc("/data", newSensorSampling(client_redis)).Methods("POST").Schemes("http")
+	//subRouterApiSensor.HandleFunc("/data/{TD_id}", newSensorSampling(client_redis)).Methods("POST").Schemes("http")
 
+
+	router.HandleFunc(fmt.Sprintf("/%s",configs.Server_URL_firstPhasePath), newSensorInterface(client_redis)).Methods("POST").Schemes("http")
+	router.HandleFunc(fmt.Sprintf("/%s",configs.Server_URL_secondPhasePath), newSensorInstance(client_redis)).Methods("POST").Schemes("http")
+	router.HandleFunc(fmt.Sprintf("/%s",configs.Server_URL_thirdPhasePath), newSensorSampling(client_redis)).Methods("POST").Schemes("http")
+	router.HandleFunc(fmt.Sprintf("/%s/%s",configs.Server_URL_thirdPhasePath, "{TD_id}"), newSensorSampling(client_redis)).Methods("POST").Schemes("http")
+	router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		tpl, err1 := route.GetPathTemplate()
+		met, err2 := route.GetMethods()
+		fmt.Println(tpl, err1, met, err2)
+		return nil
+	})
 	HTTPServer := &http.Server{Addr: ":" + Port, Handler: router}
 
 	return HTTPServer
