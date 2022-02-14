@@ -6,22 +6,18 @@ import (
 	"fmt"
 )
 
-//Struct for reading Thing Description
-//to set new board and/or create new
-//sensor table into database.
-//link: https://www.w3.org/TR/wot-thing-description/
+// Struct for reading Thing Description to set new instance of sensor node
+// Ref: https://www.w3.org/TR/wot-thing-description/
 
 ////////////////////////////////////////
+
+// Simply TD message structure
 type ThingDescription struct {
-	//ProductName string  `json:"prodname"`
-	//Owner       string  `json:"owner"`
 	ID           string  `json:"id"`
 	Title        string `json:"title"`
 	Model        string  `json:"model"`
-	//Titles      *map[string]string `json:"titles"`
 	Description string `json:"description"`
 	Manufacturer string  `json:"manufacturer"`
-	//Schema      DataSchema `json:"dataSchema"`
 	Properties map[string]DataSchema            `json:"properties"`
 	Events     map[string]InteractionAffordance `json:"events"`
 }
@@ -42,12 +38,9 @@ type Form struct {
 	ContentType string `json:"contentType"`
 }
 
-/*type SensorInfo struct {
-	ProductName string `json:"titles"`
-	Owner       string `json:"owner"`
-}*/
 
 ////////////////////////////////////////
+// Utility functions
 
 func (td *ThingDescription) ToSaveSensor() []byte {
 
@@ -69,9 +62,8 @@ Check if given Thing Description descibe initialized sensor
 func (td *ThingDescription) Equals(o ThingDescription) (bool, error) {
 	eqProp := true
 
-	if (o.Model == "") || (td.Model == "") || ((o.Title) == "") ||
-		(td.Title == "") || (o.Manufacturer == "") || (td.Manufacturer == "") || (o.Title == "") || (td.Title == "") {
-		return false, errors.New("Check Thing Descrtiption format. Some values must not be empty.")
+	if o.Model == "" || td.Model == "" || o.Manufacturer == "" || td.Manufacturer == "" || o.Title == "" || td.Title == "" {
+		return false, errors.New("Check Thing Description format. Some values must not be empty.")
 	}
 
 	eqProp = eqProp && (len(o.Properties) == len(td.Properties))

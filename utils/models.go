@@ -8,12 +8,25 @@ import (
 	"time"
 )
 
-type NewSensorRes struct {
-	UID          uuid.UUID//RandomId
+/*
+	models.go contains the models, in the form of structs, of the main entities that are used in the Demo, and utility
+	functions used to deal with them.
+*/
+
+///////////////////////////////////////////////PHASE 1
+///////////////////////////////////////////////PHASE 1
+
+// The Request is a TD object
+type NewInterfaceResponse struct {
+	UID          uuid.UUID
 	Name         string
 	Owner        string
 	CreationTime time.Time
 }
+
+
+///////////////////////////////////////////////PHASE 2
+///////////////////////////////////////////////PHASE 2
 
 type SensorInstance struct {
 	UID 	int// short UID instead of uuid.UUID
@@ -42,10 +55,8 @@ type InstanceRegistrationResponse struct{
 	Manufacturer string
 }
 
-type SamplingResponse struct{
-	Status string
-}
-
+// NewGeojsonFeature function randomly returns a valid and consistent Geojson feature.
+// It is used in the generation of the Area field of InstanceRegistrationRequest
 func NewGeojsonFeature() geojson.Feature {
 	pol := orb.Polygon{}
 	switch rand.Intn(3){
@@ -76,3 +87,12 @@ func NewGeojsonFeature() geojson.Feature {
 
 	return *(geojson.NewFeature(pol))
 }
+
+///////////////////////////////////////////////PHASE 3
+///////////////////////////////////////////////PHASE 3
+
+// The request is a SenML object
+type SamplingResponse struct{
+	Status string
+}
+

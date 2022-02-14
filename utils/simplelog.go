@@ -1,12 +1,15 @@
-package configs
+package utils
 
 import (
 	"fmt"
+	"github.com/SEAMDAP/Demo/configs"
 	"os"
 	"strconv"
 	"time"
 )
-//The recommended approach is to use a network scan tool like Wireshark
+
+// LOGGING functions
+// NB: Use only as a referende. The recommended approach is to use a network scan tool like Wireshark fo evaluations.
 
 var LOGFILE *os.File
 var LOGFILE_CONFIGS *os.File
@@ -15,25 +18,25 @@ var LOGFILE_CONFIGS *os.File
 func LogConfig_Parameters(){
 
 	l := map[string]string{
-		"Server_addr" : Server_addr,
-		"Server_port" : Server_port,
-		"Server_URL_firstPhasePath" : Server_URL_firstPhasePath,
-		"Server_URL_secondPhasePath" : Server_URL_secondPhasePath,
-		"Server_URL_thirdPhasePath" : Server_URL_thirdPhasePath,
-		"Server_REDIS_fullAddress" : Server_REDIS_fullAddress,
-		"Server_REDIS_pass" : Server_REDIS_pass,
-		"LogFileAddress" : LogFileAddress,
-		"Client_number" : strconv.Itoa(Client_number),
-		"Client_maxSensorInstance" : strconv.Itoa(Client_maxSensorInstance),
-		"Client_maxLifeTime" : strconv.Itoa(Client_maxLifeTime),
-		"Client_maxWakeTime" : strconv.Itoa(Client_maxWakeTime),
-		"Client_maxFirstPhaseTime" : strconv.Itoa(Client_maxFirstPhaseTime),
-		"Client_maxSecondPhaseTime" : strconv.Itoa(Client_maxSecondPhaseTime),
-		"Client_maxCommunicationPeriodRange" : fmt.Sprintf("[%d - %d]",Client_maxCommunicationPeriodRange[0], Client_maxCommunicationPeriodRange[1]),
+		"Server_addr" :                        configs.Server_addr,
+		"Server_port" :                        configs.Server_port,
+		"Server_URL_firstPhasePath" :          configs.Server_URL_firstPhasePath,
+		"Server_URL_secondPhasePath" :         configs.Server_URL_secondPhasePath,
+		"Server_URL_thirdPhasePath" :          configs.Server_URL_thirdPhasePath,
+		"Server_REDIS_fullAddress" :           configs.Server_REDIS_fullAddress,
+		"Server_REDIS_pass" :                  configs.Server_REDIS_pass,
+		"LogFileAddress" :                     configs.LogFileAddress,
+		"Client_number" :                      strconv.Itoa(configs.Client_number),
+		"Client_maxSensorInstance" :           strconv.Itoa(configs.Client_maxSensorInstance),
+		"Client_maxLifeTime" :                 strconv.Itoa(configs.Client_maxLifeTime),
+		"Client_maxWakeTime" :                 strconv.Itoa(configs.Client_maxWakeTime),
+		"Client_maxFirstPhaseTime" :           strconv.Itoa(configs.Client_maxFirstPhaseTime),
+		"Client_maxSecondPhaseTime" :          strconv.Itoa(configs.Client_maxSecondPhaseTime),
+		"Client_maxCommunicationPeriodRange" : fmt.Sprintf("[%d - %d]", configs.Client_maxCommunicationPeriodRange[0], configs.Client_maxCommunicationPeriodRange[1]),
 	}
 
 	for k,v := range l {
-		log:= fmt.Sprintf("%s = %s\n", k, v)
+		log:= fmt.Sprintf("APPLICATION,%s,%s\n", k, v)
 		if _, err := LOGFILE_CONFIGS.Write([]byte(log)); err != nil {
 			fmt.Println(err)
 		}
@@ -104,26 +107,35 @@ func LogClientSendSample_response(id int, tm time.Duration, INID string){
 }
 
 
-
-
-
 func init() {
 	timeF := time.Now().Format("2006-01-02_15:04:05")
-	logFile := fmt.Sprintf("%s/application_client_%s.log",LogFileAddress, timeF)
+	logFile := fmt.Sprintf("%s/application_client_%s.log", configs.LogFileAddress, timeF)
 	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil{
 		panic(err)
 		return
 	}
-	LOGFILE = file
 
-	logFile2 := fmt.Sprintf("%s/application_configs_%s.log",LogFileAddress, timeF)
+	logFile2 := fmt.Sprintf("%s/application_configs_%s.log", configs.LogFileAddress, timeF)
 	file2, err := os.OpenFile(logFile2, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil{
 		panic(err)
 		return
 	}
+
+	LOGFILE = file
 	LOGFILE_CONFIGS = file2
+
+	// Columns name
+	if _, err := LOGFILE.Write([]byte("CLIENT, ACTION, TYPE, TIME, INFO \n")); err != nil {
+		panic(err)
+	}
+	if _, err := LOGFILE_CONFIGS.Write([]byte("TYPE, PARAMETER, VALUE \n")); err != nil {
+		panic(err)
+	}
+
+	return
+
 }
 
 

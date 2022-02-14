@@ -3,8 +3,8 @@ package seamdap_client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gPenzotti/SEAMDAP/configs"
-	"github.com/gPenzotti/SEAMDAP/utils"
+	"github.com/SEAMDAP/Demo/configs"
+	"github.com/SEAMDAP/Demo/utils"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"math/rand"
@@ -12,10 +12,16 @@ import (
 	"sync"
 	"time"
 )
+//////////////////////////CLIENT
+//////////////////////////CLIENT
+//////////////////////////CLIENT
 
-func main(){
-	fmt.Println("Hello")
-}
+/*
+	A dynamic pool of Clients are emulated using the concurrency of the goroutine.
+*/
+
+var LOG = true // Enable log on file
+var VERBOSE = true // Enable print
 
 type SEAMDAPClient struct{
 	ID int
@@ -34,43 +40,56 @@ func NewClient(id int, index int,  wg *sync.WaitGroup, maxTime int, startTime ti
 		ID:    id,
 		Index: index,
 		TDId:  uuid.UUID{},
-		UserAgent: "CLIENT_N"+strconv.Itoa(index)+"_ID"+strconv.Itoa(id),
+		UserAgent: "CLIENT_N"+strconv.Itoa(index)+"_ID"+strconv.Itoa(id), //unused
 		MSG_index: rand.Intn(5),
 		StartTime:startTime,
 	}
 
+	// First Inactivity time
 	timetoWake := rand.Intn(configs.Client_maxWakeTime)
 	time.Sleep(time.Duration(timetoWake)*time.Second)
-	configs.LogClientWake(MyClient.ID, time.Now().Sub(MyClient.StartTime))
-	configs.LogConfig_RndTime(MyClient.ID, "TIME_TO_WAKE", timetoWake)
 
+	if LOG{
+		utils.LogClientWake(MyClient.ID, time.Now().Sub(MyClient.StartTime))
+		utils.LogConfig_RndTime(MyClient.ID, "TIME_TO_WAKE", timetoWake)
+	}
+
+	// Second Inactivity time
 	timetoTD := rand.Intn(configs.Client_maxFirstPhaseTime - timetoWake)
-	time.Sleep(time.Duration(timetoTD)*time.Second) //TODO: SLEEP
-	configs.LogConfig_RndTime(MyClient.ID, "TIME_TO_FIRST_PHASE", timetoTD)
+	time.Sleep(time.Duration(timetoTD)*time.Second)
 
+	if LOG{
+		utils.LogConfig_RndTime(MyClient.ID, "TIME_TO_FIRST_PHASE", timetoTD)
+	}
 
-	//TODO: interfaceRegistration() --> return TD_id
+	// PHASE 1
 	TD_id,err := TD_CreateAndRegister(&MyClient)
-	fmt.Println(TD_id)
 	if err != nil {
-		fmt.Println("ERRORE: ", err)
+		fmt.Printf("[INIT Clients] ERROR: %s \n ", err)
+		panic(err)
 		return
 	}
 
 	MyClient.TDId = TD_id
 
-	sensorsInstancesNumber := rand.Intn(configs.Client_maxSensorInstance)
-	configs.LogConfig_InstanceNumber(MyClient.ID, sensorsInstancesNumber)
+	sensorsInstancesNumber := configs.Client_maxSensorInstance// or rand.Intn(configs.Client_maxSensorInstance)
+	if LOG{
+		utils.LogConfig_InstanceNumber(MyClient.ID, sensorsInstancesNumber)
+	}
 
 	var sub_wg sync.WaitGroup
 	for s := 0; s < sensorsInstancesNumber; s++ {
 
+		// Creation of Sensor Node Instances goroutine
 		timeToInstance := rand.Intn(configs.Client_maxSecondPhaseTime - (timetoTD + timetoWake))
-		configs.LogConfig_RndTime(MyClient.ID, "TIME_TO_SECOND_PHASE_"+strconv.Itoa(s), timeToInstance)
+		if LOG{
+			utils.LogConfig_RndTime(MyClient.ID, "TIME_TO_SECOND_PHASE_"+strconv.Itoa(s), timeToInstance)
+		}
 
 		commPeriod := rand.Intn( configs.Client_maxCommunicationPeriodRange[1] - configs.Client_maxCommunicationPeriodRange[0]) + configs.Client_maxCommunicationPeriodRange[0]
-		configs.LogConfig_RndTime(MyClient.ID, "TIME_THIRD_PHASE_PERIOD_"+strconv.Itoa(s), commPeriod)
-
+		if LOG{
+			utils.LogConfig_RndTime(MyClient.ID, "TIME_THIRD_PHASE_PERIOD_"+strconv.Itoa(s), commPeriod)
+		}
 
 		sub_wg.Add(1)
 		go sensorInstanceSubRoutine(&sub_wg, MyClient, commPeriod, timeToInstance, maxTime, startTime)
@@ -82,43 +101,50 @@ func NewClient(id int, index int,  wg *sync.WaitGroup, maxTime int, startTime ti
 
 func sensorInstanceSubRoutine( sub_wg *sync.WaitGroup,client SEAMDAPClient, commPeriod int, sleepTime int, maxTime int, startTime time.Time ){
 	defer sub_wg.Done()
-	time.Sleep(time.Duration(sleepTime)*time.Second) //TODO: SLEEP
 
-	// TODO: instanceRegistration --> IN_id ?
+	// Third Inactivity time
+	time.Sleep(time.Duration(sleepTime)*time.Second)
+
+	// PHASE 2
 	instID, err := INSTANCE_CreateAndRegister(&client)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Printf("[client %d] ERROR: %s \n", client.ID, err.Error())
+		panic(err)
 	}
-	// Samples Communication period time
+
 
 	for{
+		//PHASE 3
 
-		// Check and sleep
 		remainingSeconds := startTime.Add(time.Duration(maxTime)*time.Second).Sub(time.Now()).Seconds()
-		fmt.Printf("REMAINING SEC: %f, 2*CommPeriod: %f, check : %t \n",remainingSeconds,float64(2*commPeriod), remainingSeconds < float64(2*commPeriod) )
 		if remainingSeconds < float64(2*commPeriod){
-			fmt.Println("FINITO")
 			break
 		}
-		//TODO: uploadSampling
+		//TEST
+		//fmt.Printf("[client %d] REMAINING SEC: %f, 2*CommPeriod: %f, check : %t \n", client.ID, remainingSeconds,float64(2*commPeriod), remainingSeconds < float64(2*commPeriod) )
+
 		stat, err := SAMPLE_CreateAndUpload(&client, instID)
 		if err != nil{
-			fmt.Println(err)
+			fmt.Printf("[client %d] ERRORE: %s \n", client.ID, err.Error())
 		}
-		fmt.Println("UPLOAD COMPLETE: ",stat)
+		if VERBOSE{
+			fmt.Printf("[client %d] Sample Upload Complete. Response: %s \n", client.ID, stat)
+		}
 
-		//fmt.Println("SLEEPIAMO PER SECONDI:", commPeriod)
-		time.Sleep(time.Duration(commPeriod)*time.Second) //TODO: SLEEP
+		// Inactive for samples upload period
+		time.Sleep(time.Duration(commPeriod)*time.Second)
 	}
-	fmt.Println("SUPER FINITO")
+	fmt.Printf("[client %d] Closing.\n", client.ID)
 	return
 
 }
 
 func TD_CreateAndRegister(client *SEAMDAPClient) (uuid.UUID,error){
-	fmt.Println("Registering TD...")
+	if VERBOSE{
+		fmt.Printf("[client %d] PHASE 1: Registering TD. \n", client.ID)
+	}
 
-	TD := configs.TestMessagesTD[client.MSG_index]
+	TD := utils.TestMessagesTD[client.MSG_index]
 	TD.ID = client.TDId.String()
 	TD.Title ="TD_TITLE_EXAMPLE_" + strconv.Itoa(client.Index)
 	TD.Model = "TD_MODEL_EXAMPLE_" + strconv.Itoa(client.Index)
@@ -126,34 +152,39 @@ func TD_CreateAndRegister(client *SEAMDAPClient) (uuid.UUID,error){
 
 	resp,err, timeReq, timeResp := InterfaceRegistration(TD, 0, time.Now(), client)
 	if err != nil{
-		fmt.Println("ERROR ERROR ", err)
+		fmt.Printf("[client %d] ERROR: %s \n", client.ID, err.Error())
 		return uuid.New(), err
 	}
 	if resp.StatusCode != 200{
-		fmt.Println("Failed request - status code != 200: ", err)
+		fmt.Printf("[client %d] ERROR: Failed request - status code != 200. Desc: %s \n",  client.ID, err.Error())
 		return uuid.New(), err
 	}
 
-	ns := utils.NewSensorRes{}
+	ns := utils.NewInterfaceResponse{}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &ns)
 	if err != nil {
-		fmt.Println("Failed parsing NewSensorRes: ", err.Error())
+		fmt.Printf("[client %d] Failed parsing NewInterfaceResponse: %s \n", client.ID, err.Error())
 		return uuid.New(), err
 	}
 
-	fmt.Println("Received response: ", ns)
+	if VERBOSE {
+		fmt.Printf("[client %d] Received response: %v \n", client.ID, ns)
+	}
 
-	configs.LogClientSendTD(client.ID, timeReq.Sub(client.StartTime), ns.UID.String())
-	configs.LogClientSendTD_response(client.ID, timeResp.Sub(client.StartTime), ns.UID.String())
+	if LOG{
+		utils.LogClientSendTD(client.ID, timeReq.Sub(client.StartTime), ns.UID.String())
+		utils.LogClientSendTD_response(client.ID, timeResp.Sub(client.StartTime), ns.UID.String())
+	}
 
 	return ns.UID, nil
 }
 
 func INSTANCE_CreateAndRegister(client *SEAMDAPClient) (int,error){
-	fmt.Println("Registering Instance...")
+	if VERBOSE{
+		fmt.Printf("[client %d] PHASE 2: Registering Instance.\n", client.ID)
+	}
 
-	// Creazione del messaggio di istanza
 	instance_request := utils.InstanceRegistrationRequest{
 		TDID:      client.TDId,
 		UserID:    client.ID,
@@ -161,43 +192,44 @@ func INSTANCE_CreateAndRegister(client *SEAMDAPClient) (int,error){
 		Area:      utils.NewGeojsonFeature(),
 	}
 
-	// Invio al Server e ricezione risposta
-
 	resp, err, timeReq, timeResp := InstanceRegistration(instance_request)
 	if err != nil{
-		fmt.Println("ERROR ERROR ", err)
+		fmt.Printf("[client %d] ERROR: %s \n", client.ID, err.Error())
 		return 0, err
 	}
 	if resp.StatusCode != 200{
-		fmt.Println("Failed request - status code != 200: ", err)
+		fmt.Printf("[client %d] ERROR: Failed request - status code != 200. Desc: %s \n", client.ID, err.Error())
 		return 0, err
 	}
 
-	// Parsing risposta e ritorno valori necessari
 	ns := utils.InstanceRegistrationResponse{}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &ns)
 	if err != nil {
-		fmt.Println("Failed parsing InstanceRegistrationResponse: ", err.Error())
+		fmt.Printf("[client %d] ERROR: Failed parsing InstanceRegistrationResponse. Desc: %s \n", client.ID, err.Error())
 		return 0, err
 	}
-	fmt.Println("Received response: ", ns)
+	if VERBOSE{
+		fmt.Printf("[client %d] Received response: %v \n", client.ID, ns)
+	}
 
-	configs.LogClientSendInstance(client.ID, timeReq.Sub(client.StartTime), strconv.Itoa(ns.InstanceID))
-	configs.LogClientSendInstance_response(client.ID, timeResp.Sub(client.StartTime), strconv.Itoa(ns.InstanceID))
+	if LOG{
+		utils.LogClientSendInstance(client.ID, timeReq.Sub(client.StartTime), strconv.Itoa(ns.InstanceID))
+		utils.LogClientSendInstance_response(client.ID, timeResp.Sub(client.StartTime), strconv.Itoa(ns.InstanceID))
+	}
 
 	return ns.InstanceID, nil
 }
 
 func SAMPLE_CreateAndUpload(client *SEAMDAPClient, instanceID int) (string,error){
 
-	fmt.Println("Uploading sample...")
+	if VERBOSE{
+		fmt.Printf("[client %d] PHASE 3: Uploading sample.\n", client.ID)
+	}
 
-	// Creazione del messaggio di sampling
-
-	rec,err := configs.GetSENML(client.MSG_index)
+	rec,err := utils.GetSENML(client.MSG_index)
 	if err != nil {
-		fmt.Println("Error in generating Senml: ", err)
+		fmt.Printf("[client %d] Error in generating Senml: %s \n", client.ID, err.Error())
 	}
 	rec.TimeRecord = time.Now().Format("2006.01.02T15:04:05")
 	rec.Name = strconv.Itoa(instanceID)
@@ -206,32 +238,33 @@ func SAMPLE_CreateAndUpload(client *SEAMDAPClient, instanceID int) (string,error
 		Record: []utils.SenMLPos{rec},
 	}
 
-
-	// Invio al Server e ricezione risposta
 	resp, err, timeReq, timeResp := UploadSampling(msg, client.TDId)
 	if err != nil{
-		fmt.Println("ERROR ERROR ", err)
+		fmt.Printf("[client %d] ERROR: %s \n ",client.ID, err.Error())
 		return "", err
 	}
 	if resp.StatusCode != 200{
-		fmt.Println("Failed request - status code != 200: ", err)
+		fmt.Printf("[client %d] ERROR: Failed request - status code != 200. Desc: %s \n", client.ID, err.Error())
 		return "", err
 	}
 
-	// Parsing risposta e ritorno valori necessari
 	ns := utils.SamplingResponse{}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err = json.Unmarshal(body, &ns)
 	if err != nil {
-		fmt.Println("Failed parsing InstanceRegistrationResponse: ", err.Error())
+		fmt.Printf("[client %d] Failed parsing InstanceRegistrationResponse: %s \n", client.ID, err.Error())
 		return "", err
 	}
 
-	fmt.Println("Received response: ", ns)
+	if VERBOSE{
+		fmt.Printf("[client %d] Received response: %v \n", client.ID, ns)
+	}
 
-	tempid:=rand.Intn(1000000)
-	configs.LogClientSendSample(client.ID, timeReq.Sub(client.StartTime), strconv.Itoa(tempid))
-	configs.LogClientSendSample_response(client.ID, timeResp.Sub(client.StartTime), strconv.Itoa(tempid))
+	if LOG{
+		temporaryid:=rand.Intn(1000000)
+		utils.LogClientSendSample(client.ID, timeReq.Sub(client.StartTime), strconv.Itoa(temporaryid))
+		utils.LogClientSendSample_response(client.ID, timeResp.Sub(client.StartTime), strconv.Itoa(temporaryid))
+	}
 
 	return ns.Status, nil
 }

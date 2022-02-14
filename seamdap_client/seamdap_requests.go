@@ -4,23 +4,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gPenzotti/SEAMDAP/configs"
-	"github.com/gPenzotti/SEAMDAP/utils"
+	"github.com/SEAMDAP/Demo/configs"
+	"github.com/SEAMDAP/Demo/utils"
 	"github.com/google/uuid"
 	"net/http"
 	"time"
 )
 
+/*
+	This file contains the request needed to reach the server, performing all the phases in SEAMDAP
+*/
 
 func InterfaceRegistration(TD utils.ThingDescription, IdPlot int32, date time.Time, clnt *SEAMDAPClient) (*http.Response, error,time.Time,time.Time) {
-	msg := TD
-	//url := "/api/sensor/" + strconv.Itoa(int(IdPlot))
-	//url := "http://127.0.0.1:8000/api/sensor/interface"
+
 	url := fmt.Sprintf("http://%s:%s/%s", configs.Server_addr, configs.Server_port, configs.Server_URL_firstPhasePath)
 	method := "POST"
 
-	fmt.Println("req at:",url)
-
+	msg := TD
 
 	jsonRequest, err := json.Marshal(msg)
 	if err != nil {
@@ -35,7 +35,7 @@ func InterfaceRegistration(TD utils.ThingDescription, IdPlot int32, date time.Ti
 	}
 	// TEST *******************
 	//fmt.Println(req.Body)
-	//return nil, err
+	//return nil, err,time.Time{},time.Time{}
 	// ************************
 
 	req.Header.Add("Content-Type", "application/json")
@@ -55,12 +55,11 @@ func InterfaceRegistration(TD utils.ThingDescription, IdPlot int32, date time.Ti
 }
 
 func InstanceRegistration(ins_ utils.InstanceRegistrationRequest) (*http.Response, error, time.Time,time.Time) {
-	msg := ins_
-	//url := "http://brie.ce.unipr.it/api/sensor/" + strconv.Itoa(int(IdPlot))
-	//url := "http://127.0.0.1:8000/api/sensor/instance"
-	url := fmt.Sprintf("http://%s:%s/%s", configs.Server_addr, configs.Server_port, configs.Server_URL_secondPhasePath)
 
+	url := fmt.Sprintf("http://%s:%s/%s", configs.Server_addr, configs.Server_port, configs.Server_URL_secondPhasePath)
 	method := "POST"
+
+	msg := ins_
 
 	jsonRequest, err := json.Marshal(msg)
 	if err != nil {
@@ -76,7 +75,7 @@ func InstanceRegistration(ins_ utils.InstanceRegistrationRequest) (*http.Respons
 	}
 	// TEST *******************
 	//fmt.Println(req.Body)
-	//return nil, err
+	//return nil, err,time.Time{},time.Time{}
 	// ************************
 
 	req.Header.Add("Content-Type", "application/json")
@@ -96,12 +95,11 @@ func InstanceRegistration(ins_ utils.InstanceRegistrationRequest) (*http.Respons
 }
 
 func UploadSampling(samp_ utils.Custom, TD_ID uuid.UUID) (*http.Response, error, time.Time,time.Time) {
-	msg := samp_
-	//url := "http://brie.ce.unipr.it/api/sensor/" + strconv.Itoa(int(IdPlot))
-	//url := "http://127.0.0.1:8000/api/sensor/data/" + TD_ID.String() // DEVO METTERE QUI L'ID SENNO DOVE?
-	url := fmt.Sprintf("http://%s:%s/%s/%s", configs.Server_addr, configs.Server_port, configs.Server_URL_thirdPhasePath,TD_ID.String())
 
+	url := fmt.Sprintf("http://%s:%s/%s/%s", configs.Server_addr, configs.Server_port, configs.Server_URL_thirdPhasePath,TD_ID.String())
 	method := "POST"
+
+	msg := samp_
 
 	jsonRequest, err := json.Marshal(msg)
 	if err != nil {
@@ -117,7 +115,7 @@ func UploadSampling(samp_ utils.Custom, TD_ID uuid.UUID) (*http.Response, error,
 	}
 	// TEST *******************
 	//fmt.Println(req.Body)
-	//return nil, err
+	//return nil, err,time.Time{},time.Time{}
 	// ************************
 
 	req.Header.Add("Content-Type", "application/json")

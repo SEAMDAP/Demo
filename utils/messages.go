@@ -1,50 +1,31 @@
-package configs
+package utils
 
 import (
 	"fmt"
-	"github.com/gPenzotti/SEAMDAP/utils"
 	"math/rand"
 )
 
 
-//TD := utils.ThingDescription{
-//ID:           client.TDId.String(), //MA CHI LO PASSA A CHI??
-//Title:        "TD_TITLE_EXAMPLE_" + strconv.Itoa(client.Index),
-//Model:        "TD_MODEL_EXAMPLE_" + strconv.Itoa(client.Index),
-//Description:  "TD_DESC_EXAMPLE_" + strconv.Itoa(client.Index),
-//Manufacturer: "UNIPR",
-//Properties:   map[string]utils.DataSchema{
-//"temperature" : utils.DataSchema{
-//Type:        "number",
-//Description: map[string]string{"name":"tem"},
-//MinVal:      -20.0,
-//MaxVal:      +60.0,
-//},
-//"humidity" : utils.DataSchema{
-//Type:        "number",
-//Description: map[string]string{"name":"hum"},
-//MinVal:      0.0,
-//MaxVal:      +100.0,
-//},
-//},
-//Events:       nil,
-//}
+/*
+	List of message prototypes used in phase 1 and phase 3. The messages are associated based on the position (index),
+	and constitute examples of real messages extrapolated from smart farming contexts.
+*/
 
-var TestMessagesTD []utils.ThingDescription = []utils.ThingDescription {
-	utils.ThingDescription{
+var TestMessagesTD []ThingDescription = []ThingDescription{
+	ThingDescription{
 		ID:           "",
 		Title:        "",
 		Model:        "",
 		Description:  "",
 		Manufacturer: "UNIPR",
-		Properties:   map[string]utils.DataSchema{
-			"Air Temperature" : utils.DataSchema{
+		Properties:   map[string]DataSchema{
+			"Air Temperature" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"tem"},
 				MinVal:      -20.0,
 				MaxVal:      +60.0,
 			},
-			"Air Humidity" : utils.DataSchema{
+			"Air Humidity" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"hum"},
 				MinVal:      0.0,
@@ -54,26 +35,26 @@ var TestMessagesTD []utils.ThingDescription = []utils.ThingDescription {
 		Events:       nil,
 	},
 
-	utils.ThingDescription{
+	ThingDescription{
 		ID:           "",
 		Title:        "",
 		Model:        "",
 		Description:  "",
 		Manufacturer: "UNIPR",
-		Properties:   map[string]utils.DataSchema{
-			"Air Temperature" : utils.DataSchema{
+		Properties:   map[string]DataSchema{
+			"Air Temperature" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"tem"},
 				MinVal:      -20.0,
 				MaxVal:      +60.0,
 			},
-			"Air humidity" : utils.DataSchema{
+			"Air humidity" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"hum"},
 				MinVal:      0.0,
 				MaxVal:      +100.0,
 			},
-			"Luminosity" : utils.DataSchema{
+			"Luminosity" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"lux"},
 				MinVal:      0.0,
@@ -83,14 +64,14 @@ var TestMessagesTD []utils.ThingDescription = []utils.ThingDescription {
 		Events:       nil,
 	},
 
-	utils.ThingDescription{
+	ThingDescription{
 		ID:           "",
 		Title:        "",
 		Model:        "",
 		Description:  "",
 		Manufacturer: "UNIPR",
-		Properties:   map[string]utils.DataSchema{
-			"Soil Water Content Gravimetric in 30 cm" : utils.DataSchema{
+		Properties:   map[string]DataSchema{
+			"Soil Water Content Gravimetric in 30 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"swc_g_30"},
 				MinVal:      0.0,
@@ -100,44 +81,44 @@ var TestMessagesTD []utils.ThingDescription = []utils.ThingDescription {
 		Events:       nil,
 	},
 
-	utils.ThingDescription{
+	ThingDescription{
 		ID:           "",
 		Title:        "",
 		Model:        "",
 		Description:  "",
 		Manufacturer: "UNIPR",
-		Properties:   map[string]utils.DataSchema{
-			"Soil Temperature at 10 cm" : utils.DataSchema{
+		Properties:   map[string]DataSchema{
+			"Soil Temperature at 10 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"s_tem_10"},
 				MinVal:      -20.0,
 				MaxVal:      +60.0,
 			},
-			"Soil Moisture at 10 cm" : utils.DataSchema{
+			"Soil Moisture at 10 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"s_mois_10"},
 				MinVal:      0.0,
 				MaxVal:      +100.0,
 			},
-			"Soil Temperature at 20 cm" : utils.DataSchema{
+			"Soil Temperature at 20 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"s_tem_20"},
 				MinVal:      -20.0,
 				MaxVal:      +60.0,
 			},
-			"Soil Moisture at 20 cm" : utils.DataSchema{
+			"Soil Moisture at 20 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"s_mois_20"},
 				MinVal:      0.0,
 				MaxVal:      +100.0,
 			},
-			"Soil Temperature at 50 cm" : utils.DataSchema{
+			"Soil Temperature at 50 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"s_tem_50"},
 				MinVal:      -20.0,
 				MaxVal:      +60.0,
 			},
-			"Soil Moisture at 50 cm" : utils.DataSchema{
+			"Soil Moisture at 50 cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"s_mois_50"},
 				MinVal:      0.0,
@@ -147,51 +128,51 @@ var TestMessagesTD []utils.ThingDescription = []utils.ThingDescription {
 		Events:       nil,
 	},
 
-	utils.ThingDescription{
+	ThingDescription{
 		ID:           "",
 		Title:        "",
 		Model:        "",
 		Description:  "",
 		Manufacturer: "UNIPR",
-		Properties:   map[string]utils.DataSchema{
-			"Temperature Celsius" : utils.DataSchema{
+		Properties:   map[string]DataSchema{
+			"Temperature Celsius" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"tem"},
 				MinVal:      -20.0,
 				MaxVal:      +60.0,
 			},
-			"Humidity Relative" : utils.DataSchema{
+			"Humidity Relative" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"hum"},
 				MinVal:      0.0,
 				MaxVal:      +100.0,
 			},
-			"Rainfall cm" : utils.DataSchema{
+			"Rainfall cm" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"rnf"},
 				MinVal:      0.0,
 				MaxVal:      +300.0,
 			},
-			"Wind Speed m/s" : utils.DataSchema{
+			"Wind Speed m/s" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"wnd_sp"},
 				MinVal:      0.0,
 				MaxVal:      +100.0,
 			},
-			"Wind Direction" : utils.DataSchema{
+			"Wind Direction" : DataSchema{
 				Type:        "string",
 				Description: map[string]string{"name":"wnd_dr"},
 			},
-			"Air Pressure bar" : utils.DataSchema{
+			"Air Pressure bar" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"air_pr"},
 				MinVal:      0.0,
 			},
-			"Light Intensity cd" : utils.DataSchema{
+			"Light Intensity cd" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"lux"},
 			},
-			"UV Index" : utils.DataSchema{
+			"UV Index" : DataSchema{
 				Type:        "number",
 				Description: map[string]string{"name":"uv"},
 				MinVal:      0.0,
@@ -202,15 +183,11 @@ var TestMessagesTD []utils.ThingDescription = []utils.ThingDescription {
 	},
 }
 
-
-
-
-
-
-func GetSENML(index int) (utils.SenMLPos, error) {
+// Using a function to obtain fill the message with random values
+func GetSENML(index int) (SenMLPos, error) {
 	switch index {
 	case 0:
-		return utils.SenMLPos{
+		return SenMLPos{
 			TimeRecord: "",
 			Name:       "",
 			Data: map[string]interface{}{
@@ -218,7 +195,7 @@ func GetSENML(index int) (utils.SenMLPos, error) {
 				"hum": float64(rand.Intn(100)),
 			}}, nil
 	case 1:
-		return utils.SenMLPos{
+		return SenMLPos{
 				TimeRecord: "",
 				Name:       "",
 				Data:       map[string]interface{}{
@@ -227,14 +204,14 @@ func GetSENML(index int) (utils.SenMLPos, error) {
 					"lux" : float64(rand.Intn(50000)),
 				}}, nil
 	case 2:
-		return utils.SenMLPos{
+		return SenMLPos{
 			TimeRecord: "",
 			Name:       "",
 			Data:       map[string]interface{}{
 				"swc_g_30": float64(rand.Intn(100)),
 			}}, nil
 	case 3:
-		return utils.SenMLPos{
+		return SenMLPos{
 			TimeRecord: "",
 			Name:       "",
 			Data:       map[string]interface{}{
@@ -246,7 +223,7 @@ func GetSENML(index int) (utils.SenMLPos, error) {
 				"s_mois_50" : float64(rand.Intn(100)),
 			}}, nil
 	case 4:
-		return utils.SenMLPos{
+		return SenMLPos{
 			TimeRecord: "",
 			Name:       "",
 			Data:       map[string]interface{}{
@@ -261,9 +238,8 @@ func GetSENML(index int) (utils.SenMLPos, error) {
 			}}, nil
 		}
 
-	return utils.SenMLPos{}, fmt.Errorf("Invalid index: %d", index)
+	return SenMLPos{}, fmt.Errorf("Invalid index: %d", index)
 }
-
 
 
 

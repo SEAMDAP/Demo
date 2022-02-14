@@ -1,4 +1,4 @@
-module github.com/gPenzotti/SEAMDAP
+module github.com/SEAMDAP/Demo
 
 go 1.16
 

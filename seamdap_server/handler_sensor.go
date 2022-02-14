@@ -1,4 +1,4 @@
-package server
+package seamdap_server
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-redis/redis"
 
-	"github.com/gPenzotti/SEAMDAP/utils"
+	"github.com/SEAMDAP/Demo/utils"
 
 	geojson "github.com/paulmach/orb/geojson"
 )
@@ -29,7 +29,7 @@ type DataSave struct {
 /*
 Response for NewSensor()
 */
-//type NewSensorRes struct {
+//type NewInterfaceResponse struct {
 //	TDID           utils.RandomId
 //	Name          string
 //	Owner         string
@@ -54,16 +54,7 @@ type AddSensorTestReq struct {
 	Server		extServer  `json:"Server"`
 }
 
-/*
-Return info for ActiveSensorList()
-*/
-type RetSensorInfo struct {
-	UID           utils.RandomId
-	Creation_time time.Time
-	ProductName   string
-	Owner         string
-	Note          string
-}
+// Handler functions
 
 func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +83,7 @@ func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, 
 		if err !=nil{
 			fmt.Println("Error in generating UUID: ", err)
 		}
-		res := utils.NewSensorRes{
+		res := utils.NewInterfaceResponse{
 			UID:          id,
 			Name:         td.Model,
 			Owner:        td.Manufacturer,
@@ -100,7 +91,7 @@ func newSensorInterface(client_redis *redis.Client) func(w http.ResponseWriter, 
 		}
 		resByte, err := json.Marshal(res)
 		if err !=nil{
-			fmt.Println("Error during NewSensorRes marshalling: ", err)
+			fmt.Println("Error during NewInterfaceResponse marshalling: ", err)
 		}
 		err = client_redis.Set(res.UID.String(), resByte, 0).Err()
 		if err !=nil{
@@ -135,7 +126,7 @@ func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r
 			fmt.Println("ERRORE, NESSUN TD TROVATO: ",err)
 		}
 
-		val := utils.NewSensorRes{}
+		val := utils.NewInterfaceResponse{}
 		err = json.Unmarshal([]byte(valString), &val)
 		if err != nil {
 			fmt.Println("Error in unmarshalling data from redis.")
@@ -165,7 +156,7 @@ func newSensorInstance(client_redis *redis.Client) func(w http.ResponseWriter, r
 
 		instanceByte, err := json.Marshal(instance)
 		if err !=nil{
-			fmt.Println("Error during NewSensorRes marshalling: ", err)
+			fmt.Println("Error during NewInterfaceResponse marshalling: ", err)
 		}
 		err = client_redis.Set(strconv.Itoa(response.InstanceID), instanceByte, 0).Err()
 		if err != nil {

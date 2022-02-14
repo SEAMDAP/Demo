@@ -1,9 +1,8 @@
 package utils
 
-//Struct for reading custom SenML messages
-//This is a custom SenML version for Positive Server
+// Struct for reading custom SenML messages
+// This is a custom SenML version for SEAMDAP
 
-////////////////////////////////////////
 
 type SenMLPos struct {
 	TimeRecord string                 `json:"t"`
@@ -15,4 +14,4 @@ type Custom struct {
 	Record []SenMLPos `json:"senml"`
 }
 
-////////////////////////////////////////
+
