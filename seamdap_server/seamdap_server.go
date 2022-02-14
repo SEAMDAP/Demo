@@ -24,7 +24,7 @@ import (
 	- stop: shut down the seamdap_server
 	- help: print help text
 	- status: print status of the seamdap_server
-	- exit: stops the seamdap_server an close the program
+	- exit: stops the seamdap_server and close the program
 
 */
 

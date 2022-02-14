@@ -1,6 +1,6 @@
 package utils
 
-// Struct for reading custom SenML messages
+// Struct for reading and generating custom SenML messages
 // This is a custom SenML version for SEAMDAP
 
 

@@ -12,7 +12,7 @@ var Server_URL_thirdPhasePath = "api/sensor/data"
 // CLIENT
 var Client_number = 10 //30
 var Client_maxSensorInstance = 30 //10
-var Client_maxLifeTime = 18 // max time of the entire client pool simulation
+var Client_maxLifeTime = 1800 // max time of the entire client pool simulation
 // These times values indicates the deadline to be respected in the completition of the related actions. A random value
 // is chosen (limited by the deadline)
 var Client_maxWakeTime = (Client_maxLifeTime / 10)  // max time in seconds to wait before wake

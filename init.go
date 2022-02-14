@@ -27,7 +27,7 @@ import (
 
 	The Client is capable of emulating a dynamic set of SEAMDAP clients (one for each sensors node instance to be registered)
 	The Client part is executed as follows. First, N goroutines are created, with N equal to the number of instances,
-	which are in charge of obtaining, personalizing and uploading to the seamdap_server a file adhering to the Thing Description f
+	which are in charge of obtaining, personalizing and uploading to the seamdap_server a file adhering to the Thing Description
 	format. Each goroutine suddenly creates M sub-goroutines, with M equal to the number of instances that will be
 	registered using the related TD interface. The instance's sub-goroutine also takes care of loading its samples
 	on a regular basis.
@@ -36,8 +36,8 @@ import (
 
 	From the init.go file it is possible to run both the component.
 	Usage:
-	- go run init.go seamdap_server
-		- then it's possible to type some command. Type "start" to start the seamdap_server
+	- go run init.go server
+		- then it's possible to type some command. Type "start" to start the seamdap server
 	- go run init.go client
 */
 

@@ -9,6 +9,7 @@ import (
 /*
 	List of message prototypes used in phase 1 and phase 3. The messages are associated based on the position (index),
 	and constitute examples of real messages extrapolated from smart farming contexts.
+	The phase 2 messages are generated on the fly.
 */
 
 var TestMessagesTD []ThingDescription = []ThingDescription{

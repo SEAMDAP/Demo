@@ -2,4 +2,4 @@
 test
 dump.rdb
 logfiles
-application.log
+*.log
